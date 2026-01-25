@@ -664,18 +664,6 @@
   display: block;
 }
 
-.chore-text-mobile {
-  display: none;
-}
-
-@media (max-width: 600px) {
-  .chore-text-desktop {
-    display: none;
-  }
-  .chore-text-mobile {
-    display: inline;
-  }
-}
 
 .calendar-legend {
   display: flex;
