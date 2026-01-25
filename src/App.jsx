@@ -34,6 +34,17 @@ function AuthenticatedApp({ people }) {
     setRefreshKey(k => k + 1);
   }, []);
 
+  // Open user switcher on fresh sign-in (no saved user preference)
+  useEffect(() => {
+    const savedUser = localStorage.getItem('chores_selected_user');
+    if (!savedUser) {
+      // Delay slightly to ensure UserSwitcher is mounted
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('user-switcher:open'));
+      }, 100);
+    }
+  }, []);
+
   // Fetch badge count
   useEffect(() => {
     const user = localStorage.getItem('chores_selected_user') ?

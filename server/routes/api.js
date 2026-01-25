@@ -241,21 +241,6 @@ apiRouter.get('/home', async (req, res) => {
       isFull: false,
       label: 'You\'re next for trash duty'
     };
-  } else {
-    // Check if user is next in queue after the current person
-    let nextPosition = nextUpPosition + 1;
-    while (completedPositions[nextPosition]) {
-      nextPosition++;
-    }
-    const nextPerson = getTrashPerson(nextPosition);
-    if (nextPerson === user) {
-      trashUpcoming = {
-        type: 'trash',
-        assignedTo: user,
-        isFull: false,
-        label: 'You\'re up next for trash duty'
-      };
-    }
   }
 
   res.json({

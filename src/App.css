@@ -477,8 +477,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.75; transform: scale(1.04); }
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
 }
 
 .home-checkbox {
@@ -664,6 +664,19 @@
   display: block;
 }
 
+.chore-text-mobile {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .chore-text-desktop {
+    display: none;
+  }
+  .chore-text-mobile {
+    display: inline;
+  }
+}
+
 .calendar-legend {
   display: flex;
   flex-wrap: wrap;
@@ -755,6 +768,24 @@
   gap: 6px;
   max-height: 320px;
   padding-right: 4px;
+}
+
+.trash-queue-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.trash-queue-scroll::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+.trash-queue-scroll::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.trash-queue-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 .queue-slot {

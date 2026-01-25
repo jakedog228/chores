@@ -117,7 +117,9 @@ export function CalendarPage() {
   }
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = today.getFullYear() + '-' +
+    String(today.getMonth() + 1).padStart(2, '0') + '-' +
+    String(today.getDate()).padStart(2, '0');
 
   const personColorMap = {};
   for (const p of people) {
@@ -180,7 +182,10 @@ export function CalendarPage() {
                             onClick={() => setSelectedChore(chore)}
                             title={`${chore.choreName} - ${chore.assignedTo}${isSkipped ? ' (skipped)' : ''}`}
                           >
-                            <span className="chore-pill-text">{shortenChore(chore.choreName)}</span>
+                            <span className="chore-pill-text">
+                              <span className="chore-text-desktop">{shortenChore(chore.choreName)}</span>
+                              <span className="chore-text-mobile">{shortenChore(chore.choreName, true)}</span>
+                            </span>
                           </button>
                         );
                       })}
@@ -265,7 +270,7 @@ export function CalendarPage() {
   );
 }
 
-function shortenChore(name) {
+function shortenChore(name, forMobile = false) {
   const map = {
     'Do Dishes': 'Dishes',
     'Swiffer Top Floor': 'Swiffer Top',
@@ -274,6 +279,12 @@ function shortenChore(name) {
     'Clean Top Bathroom': 'Bath Top',
     'Clean Bottom Bathroom': 'Bath Bottom'
   };
+  const mobileMap = {
+    'Clean Bottom Bathroom': 'Bathroom Bot'
+  };
+  if (forMobile && mobileMap[name]) {
+    return mobileMap[name];
+  }
   return map[name] || name;
 }
 
