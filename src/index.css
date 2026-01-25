@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #FDFBF7;
+  --bg-card: #FFFFFF;
+  --bg-hover: #F8F6F2;
+  --text: #2D2A26;
+  --text-muted: #7A756E;
+  --border: #E8E4DE;
+  --accent: #8B7355;
+  --accent-light: #F0EBE4;
+  --shadow: 0 2px 8px rgba(45, 42, 38, 0.08);
+  --shadow-lg: 0 8px 24px rgba(45, 42, 38, 0.12);
+  --radius: 12px;
+  --radius-sm: 8px;
+
+  --color-critical: #E57373;
+  --color-warning: #FFB74D;
+  --color-success: #81C784;
+  --color-info: #90CAF9;
+  --color-danger: #E57373;
+
+  --error-bg: #FEF2F2;
+  --error-border: #FECACA;
+}
+
+[data-theme="dusk"] {
+  --bg: #1C1917;
+  --bg-card: #292524;
+  --bg-hover: #3D3733;
+  --text: #F5F2ED;
+  --text-muted: #A8A29E;
+  --border: #44403C;
+  --accent: #C4A77D;
+  --accent-light: #3D3530;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  --color-critical: #F87171;
+  --color-warning: #FBBF24;
+  --color-success: #86EFAC;
+  --color-info: #93C5FD;
+  --color-danger: #F87171;
+
+  --error-bg: #3D2626;
+  --error-border: #5C3A3A;
+}
+
+[data-theme="midnight"] {
+  --bg: #0F1419;
+  --bg-card: #1A2027;
+  --bg-hover: #252D38;
+  --text: #E7EAEE;
+  --text-muted: #8B949E;
+  --border: #30363D;
+  --accent: #C9A86C;
+  --accent-light: #2D3138;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  --color-critical: #F97583;
+  --color-warning: #E3B341;
+  --color-success: #7EE787;
+  --color-info: #79C0FF;
+  --color-danger: #F97583;
+
+  --error-bg: #2D2230;
+  --error-border: #4A3550;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+option {
+  background: var(--bg-card);
+  color: var(--text);
+}

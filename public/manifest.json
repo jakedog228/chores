@@ -1,0 +1,16 @@
+{
+  "name": "Chore Calendar",
+  "short_name": "Chores",
+  "description": "Household chore scheduling and trash duty tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFBF7",
+  "theme_color": "#8B7355",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

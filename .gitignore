@@ -1,2 +1,18 @@
-chore_calendar*.pdf
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment (contains secrets)
+.env.local
+
+# IDE
 .idea/
+
+# Reference files (not part of the app)
+goals/
+chore_calendar_generator.py
+trash_maker.py
+philosophy.md
+*.pdf
