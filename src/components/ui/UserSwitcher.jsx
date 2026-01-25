@@ -21,16 +21,6 @@ export function UserSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Open user switcher when requested (e.g., after sign-in)
-  useEffect(() => {
-    const handleOpenUserSwitcher = () => {
-      setIsOpen(true);
-    };
-
-    window.addEventListener('user-switcher:open', handleOpenUserSwitcher);
-    return () => window.removeEventListener('user-switcher:open', handleOpenUserSwitcher);
-  }, []);
-
   const selectedPerson = people.find(p => p.name === selectedUser);
 
   return (

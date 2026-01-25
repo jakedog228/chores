@@ -8,7 +8,7 @@ import { TrashPage } from './pages/TrashPage';
 import { LoginPage } from './pages/LoginPage';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
-import { UserProvider } from './hooks/useUser';
+import { UserProvider, useUser } from './hooks/useUser';
 import { useAppBadge } from './hooks/useAppBadge';
 import { homeApi, peopleApi } from './services/api';
 import './App.css';
@@ -22,66 +22,107 @@ function LoadingScreen() {
   );
 }
 
-function AuthenticatedApp({ people }) {
+function UserSelectionModal({ onDismiss }) {
+  const { people, setSelectedUser } = useUser();
+
+  const handleSelect = (userName) => {
+    setSelectedUser(userName);
+    onDismiss();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal user-selection-modal">
+        <h2>Who are you?</h2>
+        <p className="user-selection-subtitle">Select your name to continue</p>
+        <div className="user-selection-list">
+          {people.map((person) => (
+            <button
+              key={person.name}
+              className="user-selection-option"
+              style={{ '--user-color': person.color }}
+              onClick={() => handleSelect(person.name)}
+            >
+              <span
+                className="user-selection-dot"
+                style={{ background: person.color }}
+              />
+              <span>{person.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MainApp() {
   const [activeTab, setActiveTab] = useState('home');
   const { logout } = useAuth();
+  const { selectedUser } = useUser();
   const [badgeCount, setBadgeCount] = useState(0);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [showUserSelection, setShowUserSelection] = useState(() => {
+    const savedUser = localStorage.getItem('chores_selected_user');
+    return !savedUser;
+  });
 
   useAppBadge(badgeCount);
 
-  const handleRefreshNeeded = useCallback(() => {
-    setRefreshKey(k => k + 1);
-  }, []);
-
-  // Open user switcher on fresh sign-in (no saved user preference)
-  useEffect(() => {
-    const savedUser = localStorage.getItem('chores_selected_user');
-    if (!savedUser) {
-      // Delay slightly to ensure UserSwitcher is mounted
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('user-switcher:open'));
-      }, 100);
-    }
-  }, []);
-
   // Fetch badge count
-  useEffect(() => {
-    const user = localStorage.getItem('chores_selected_user') ?
-      JSON.parse(localStorage.getItem('chores_selected_user')) :
-      people[0]?.name;
-    if (!user) return;
+  const updateBadgeCount = useCallback(() => {
+    if (!selectedUser) return;
 
-    homeApi.get(user).then(data => {
+    homeApi.get(selectedUser).then(data => {
       setBadgeCount(data.due.length);
     }).catch(() => {});
-  }, [people, refreshKey]);
+  }, [selectedUser]);
+
+  // Update badge on mount, user change, and when app regains focus
+  useEffect(() => {
+    updateBadgeCount();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateBadgeCount();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('user-changed', updateBadgeCount);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('user-changed', updateBadgeCount);
+    };
+  }, [updateBadgeCount]);
 
   return (
-    <UserProvider people={people}>
-      <div className="app">
-        <div className="app-header">
-          <ThemeSwitcher />
-          <UserSwitcher />
-          <button className="logout-btn" onClick={logout} title="Sign out">
-            Sign out
-          </button>
-        </div>
-
-        {activeTab === 'home' && (
-          <HomePage key={refreshKey} onRefreshNeeded={handleRefreshNeeded} />
-        )}
-
-        {activeTab === 'calendar' && (
-          <CalendarPage />
-        )}
-
-        {activeTab === 'trash' && (
-          <TrashPage />
-        )}
-
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="app">
+      <div className="app-header">
+        <ThemeSwitcher />
+        <UserSwitcher />
+        <button className="logout-btn" onClick={logout} title="Sign out">
+          Sign out
+        </button>
       </div>
+
+      {activeTab === 'home' && <HomePage onRefreshNeeded={updateBadgeCount} />}
+      {activeTab === 'calendar' && <CalendarPage />}
+      {activeTab === 'trash' && <TrashPage />}
+
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {showUserSelection && (
+        <UserSelectionModal onDismiss={() => setShowUserSelection(false)} />
+      )}
+    </div>
+  );
+}
+
+function AuthenticatedApp({ people }) {
+  return (
+    <UserProvider people={people}>
+      <MainApp />
     </UserProvider>
   );
 }

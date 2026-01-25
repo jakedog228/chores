@@ -20,6 +20,7 @@ export function UserProvider({ children, people }) {
   const setSelectedUser = useCallback((name) => {
     setSelectedUserState(name);
     saveToStorage(USER_KEY, name);
+    window.dispatchEvent(new CustomEvent('user-changed'));
   }, []);
 
   const value = {
