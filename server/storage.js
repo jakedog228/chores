@@ -51,9 +51,8 @@ export async function getChoresByMonth(yearMonth) {
   }));
 }
 
-export async function getChoresDueForUser(user) {
+export async function getChoresDueForUser(user, today) {
   const db = getDb();
-  const today = new Date().toISOString().split('T')[0];
   const result = await db.execute({
     sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by
           FROM chores
@@ -71,10 +70,9 @@ export async function getChoresDueForUser(user) {
   }));
 }
 
-export async function getChoresUpcomingForUser(user, daysAhead = 2) {
+export async function getChoresUpcomingForUser(user, today, daysAhead = 2) {
   const db = getDb();
-  const today = new Date().toISOString().split('T')[0];
-  const future = new Date();
+  const future = new Date(today + 'T00:00:00');
   future.setDate(future.getDate() + daysAhead);
   const futureDate = future.toISOString().split('T')[0];
   const result = await db.execute({
@@ -94,10 +92,9 @@ export async function getChoresUpcomingForUser(user, daysAhead = 2) {
   }));
 }
 
-export async function completeChore(id, completedBy) {
+export async function completeChore(id, completedBy, today) {
   const db = getDb();
   const completedAt = new Date().toISOString();
-  const today = new Date().toISOString().split('T')[0];
 
   // Get the chore being completed
   const choreResult = await db.execute({

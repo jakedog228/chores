@@ -31,8 +31,7 @@ function getTrashPerson(position) {
 // Helper: annotate chores with skipped flag
 // A chore is "skipped" if there's an earlier incomplete occurrence of the same
 // chore_name. This freezes the rotation until the overdue person completes theirs.
-function annotateSkipped(chores, earliestIncomplete) {
-  const today = new Date().toISOString().split('T')[0];
+function annotateSkipped(chores, earliestIncomplete, today) {
   return chores.map(chore => {
     if (chore.completedAt || chore.exception) {
       return { ...chore, skipped: false };
@@ -57,25 +56,32 @@ apiRouter.get('/people', async (req, res) => {
 
 apiRouter.get('/chores', async (req, res) => {
   const month = req.query.month; // YYYY-MM format
+  const today = req.query.today; // YYYY-MM-DD format (user's local date)
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return res.status(400).json({ error: 'month query parameter required (YYYY-MM format)' });
   }
+  if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+    return res.status(400).json({ error: 'today query parameter required (YYYY-MM-DD format)' });
+  }
   const chores = await getChoresByMonth(month);
   const earliestIncomplete = await getEarliestIncompletePerChore();
-  res.json(annotateSkipped(chores, earliestIncomplete));
+  res.json(annotateSkipped(chores, earliestIncomplete, today));
 });
 
 apiRouter.patch('/chores/:id', async (req, res) => {
   const { id } = req.params;
-  const { completedBy, force } = req.body;
+  const { completedBy, force, today } = req.body;
 
   if (!completedBy) {
     return res.status(400).json({ error: 'completedBy is required' });
   }
+  if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+    return res.status(400).json({ error: 'today is required (YYYY-MM-DD format)' });
+  }
 
   const result = force
     ? await forceCompleteChore(id, completedBy)
-    : await completeChore(id, completedBy);
+    : await completeChore(id, completedBy, today);
   res.json(result);
 });
 
@@ -187,13 +193,17 @@ apiRouter.post('/trash/complete', async (req, res) => {
 
 apiRouter.get('/home', async (req, res) => {
   const user = req.query.user;
+  const today = req.query.today; // YYYY-MM-DD format (user's local date)
   if (!user) {
     return res.status(400).json({ error: 'user query parameter required' });
   }
+  if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+    return res.status(400).json({ error: 'today query parameter required (YYYY-MM-DD format)' });
+  }
 
   const earliestIncomplete = await getEarliestIncompletePerChore();
-  const rawDue = await getChoresDueForUser(user);
-  const rawUpcoming = await getChoresUpcomingForUser(user);
+  const rawDue = await getChoresDueForUser(user, today);
+  const rawUpcoming = await getChoresUpcomingForUser(user, today);
 
   // Filter out skipped chores from due list (upcoming ones still have time)
   const due = rawDue.filter(chore => {

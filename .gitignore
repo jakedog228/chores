@@ -16,3 +16,4 @@ chore_calendar_generator.py
 trash_maker.py
 philosophy.md
 *.pdf
+.vercel

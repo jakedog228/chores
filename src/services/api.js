@@ -1,5 +1,13 @@
 const API_BASE = '/api';
 
+// Get user's local date in YYYY-MM-DD format
+function getLocalDate() {
+  const now = new Date();
+  return now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+}
+
 async function request(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
@@ -41,10 +49,10 @@ export const peopleApi = {
 };
 
 export const choresApi = {
-  getByMonth: (month) => request(`/chores?month=${month}`),
+  getByMonth: (month) => request(`/chores?month=${month}&today=${getLocalDate()}`),
   complete: (id, completedBy, { force = false } = {}) => request(`/chores/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify({ completedBy, force })
+    body: JSON.stringify({ completedBy, force, today: getLocalDate() })
   }),
   uncomplete: (id, { force = false } = {}) => request(`/chores/${id}/uncomplete`, {
     method: 'PATCH',
@@ -69,5 +77,5 @@ export const trashApi = {
 };
 
 export const homeApi = {
-  get: (user) => request(`/home?user=${encodeURIComponent(user)}`)
+  get: (user) => request(`/home?user=${encodeURIComponent(user)}&today=${getLocalDate()}`)
 };
