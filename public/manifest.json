@@ -9,8 +9,9 @@
   "icons": [
     {
       "src": "/icon.png",
-      "sizes": "any",
-      "type": "image/png"
+      "sizes": "225x225",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
