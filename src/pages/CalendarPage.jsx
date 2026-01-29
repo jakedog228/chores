@@ -168,19 +168,25 @@ export function CalendarPage() {
                     <span className="calendar-day-number">{day}</span>
                     <div className="calendar-chores">
                       {dayChores.sort((a, b) => a.choreName.localeCompare(b.choreName)).map(chore => {
-                        const isPermanentlySkipped = chore.completedBy === 'skipped';
-                        const isComplete = !!chore.completedAt && !isPermanentlySkipped;
-                        const isSkipped = chore.skipped || isPermanentlySkipped;
+                        const isPardoned = chore.completedBy === 'skipped';
+                        const isComplete = !!chore.completedAt && !isPardoned;
+                        const isSkipped = chore.skipped && !isPardoned;
                         const isDue = !chore.completedAt && !chore.skipped && dateStr <= todayStr;
                         const color = personColorMap[chore.assignedTo] || '#ccc';
+
+                        // Determine pill state class
+                        let stateClass = '';
+                        if (isSkipped) stateClass = 'skipped';
+                        else if (isPardoned) stateClass = 'pardoned';
+                        else if (isComplete) stateClass = 'complete';
 
                         return (
                           <button
                             key={chore.id}
-                            className={`chore-pill ${isComplete || isSkipped ? 'complete' : ''} ${isDue ? 'due' : ''}`}
+                            className={`chore-pill ${stateClass} ${isDue ? 'due' : ''}`}
                             style={{ '--pill-color': color }}
                             onClick={() => setSelectedChore(chore)}
-                            title={`${chore.choreName} - ${chore.assignedTo}${isSkipped ? ' (skipped)' : ''}`}
+                            title={`${chore.choreName} - ${chore.assignedTo}${isSkipped ? ' (skipped)' : isPardoned ? ' (pardoned)' : ''}`}
                           >
                             <span className="chore-pill-text">{shortenChore(chore.choreName)}</span>
                           </button>
@@ -211,7 +217,14 @@ export function CalendarPage() {
           <div className="modal chore-modal" onClick={e => e.stopPropagation()}>
             <h2>{selectedChore.choreName}</h2>
             <div className="chore-detail-info">
-              <p><strong>Assigned to:</strong> {selectedChore.assignedTo}</p>
+              <p>
+                <strong>Assigned to:</strong>{' '}
+                {selectedChore.skipped || selectedChore.completedBy === 'skipped' ? (
+                  <span className="crossed-out">{selectedChore.assignedTo}</span>
+                ) : (
+                  selectedChore.assignedTo
+                )}
+              </p>
               <p><strong>Due:</strong> {formatDate(selectedChore.dueDate)}</p>
               {selectedChore.completedBy === 'skipped' ? (
                 <p className="skipped-notice">Pardoned — someone earlier in the rotation was still overdue</p>

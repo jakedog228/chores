@@ -649,6 +649,15 @@
   text-decoration: line-through;
 }
 
+.chore-pill.skipped {
+  background: #ffffff;
+}
+
+.chore-pill.pardoned {
+  background: #ffffff;
+  opacity: 0.4;
+}
+
 .chore-pill.due {
   animation: pulse 2s ease-in-out infinite;
   box-shadow: 0 0 0 2px var(--accent);
@@ -960,6 +969,11 @@
   color: var(--text-muted);
   opacity: 0.8;
   font-size: 13px;
+}
+
+.crossed-out {
+  text-decoration: line-through;
+  color: var(--text-muted);
 }
 
 .chore-detail-actions {
