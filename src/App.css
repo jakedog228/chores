@@ -650,11 +650,11 @@
 }
 
 .chore-pill.skipped {
-  background: #ffffff;
+  background: var(--border);
 }
 
 .chore-pill.pardoned {
-  background: #ffffff;
+  background: var(--border);
   opacity: 0.4;
 }
 
