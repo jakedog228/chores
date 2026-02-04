@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '../hooks/useUser';
 import { choresApi } from '../services/api';
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icons/Icons';
@@ -14,6 +14,8 @@ export function CalendarPage() {
   const [chores, setChores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChore, setSelectedChore] = useState(null);
+  const [showMerrimentInfo, setShowMerrimentInfo] = useState(false);
+  const [expandedTerm, setExpandedTerm] = useState(null);
 
   const monthStr = `${currentDate.year}-${String(currentDate.month).padStart(2, '0')}`;
 
@@ -128,6 +130,41 @@ export function CalendarPage() {
 
   const monthName = new Date(currentDate.year, currentDate.month - 1).toLocaleString('default', { month: 'long' });
 
+  const merrimentData = useMemo(() => {
+    if (!chores.length) return null;
+
+    const now = new Date();
+    const nowStr = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0');
+
+    const isCurrentMonth = currentDate.year === now.getFullYear()
+      && currentDate.month === now.getMonth() + 1;
+    const isFutureMonth = currentDate.year > now.getFullYear()
+      || (currentDate.year === now.getFullYear() && currentDate.month > now.getMonth() + 1);
+
+    if (isFutureMonth) return null;
+
+    // Only count chores strictly before today (today's chores are still in progress)
+    const relevant = isCurrentMonth
+      ? chores.filter(c => c.dueDate < nowStr)
+      : chores;
+
+    const total = relevant.length;
+
+    // First day of the current month: no past chores yet, default to 100%
+    if (total === 0) return { completed: 0, skipped: 0, pardoned: 0, overdue: 0, total: 0, percent: 100 };
+
+    const completedOnTime = relevant.filter(c => !!c.completedAt && c.completedBy !== 'skipped' && !c.skipped).length;
+    const skipped = relevant.filter(c => c.skipped && c.completedBy !== 'skipped').length;
+    const pardoned = relevant.filter(c => c.completedBy === 'skipped').length;
+    const overdue = relevant.filter(c => !c.completedAt && !c.skipped).length;
+
+    const percent = (completedOnTime / total * 100);
+
+    return { completed: completedOnTime, skipped, pardoned, overdue, total, percent };
+  }, [chores, currentDate]);
+
   return (
     <div className="page">
       <div className="page-header">
@@ -211,6 +248,20 @@ export function CalendarPage() {
         ))}
       </div>
 
+      {!loading && merrimentData && (
+        <div className="merriment-row">
+          <span className="merriment-label">Merriment</span>
+          <span className="merriment-value">{merrimentData.percent.toFixed(1)}%</span>
+          <button
+            className="merriment-info-btn"
+            onClick={() => { setShowMerrimentInfo(true); setExpandedTerm(null); }}
+            title="What is Merriment?"
+          >
+            i
+          </button>
+        </div>
+      )}
+
       {/* Chore detail modal */}
       {selectedChore && (
         <div className="modal-overlay" onClick={() => setSelectedChore(null)}>
@@ -270,6 +321,135 @@ export function CalendarPage() {
                 </button>
               )}
               <button className="btn-secondary" onClick={() => setSelectedChore(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Merriment info modal */}
+      {showMerrimentInfo && merrimentData && (
+        <div className="modal-overlay" onClick={() => setShowMerrimentInfo(false)}>
+          <div className="modal merriment-info-modal" onClick={e => e.stopPropagation()}>
+            <h2>What is Merriment?</h2>
+            <p className="merriment-info-desc">
+              Merriment is the percentage of chores that were completed on time. It only
+              counts chores from before today, since today's are still in progress.
+              On the first day of the month, Merriment starts at 100%.
+            </p>
+
+            <div className="merriment-info-formula">
+              <div className="merriment-formula-label">Formula</div>
+              <div className="merriment-formula-expr">
+                Completed On Time / Total
+              </div>
+              {merrimentData.total > 0 ? (
+                <div className="merriment-formula-work">
+                  {merrimentData.completed} / {merrimentData.total} = <strong>{merrimentData.percent.toFixed(1)}%</strong>
+                </div>
+              ) : (
+                <div className="merriment-formula-work">
+                  No chores due before today, so <strong>100.0%</strong>
+                </div>
+              )}
+            </div>
+
+            <div className="merriment-term-label">What counts against Merriment:</div>
+
+            {/* Overdue collapsible */}
+            <div className="merriment-collapsible">
+              <button
+                className={`merriment-collapsible-header ${expandedTerm === 'overdue' ? 'expanded' : ''}`}
+                onClick={() => setExpandedTerm(expandedTerm === 'overdue' ? null : 'overdue')}
+              >
+                <span>Overdue ({merrimentData.overdue})</span>
+                <ChevronRightIcon />
+              </button>
+              {expandedTerm === 'overdue' && (
+                <div className="merriment-collapsible-content">
+                  <p>
+                    Chores that are still incomplete past their due date, actively
+                    waiting on someone to finish them.
+                  </p>
+                  <p>
+                    <strong>On the calendar:</strong> Overdue chores pulse with a
+                    highlighted border, drawing attention to unfinished work.
+                  </p>
+                  <p>
+                    <strong>These points are the easiest to recover! Simply completing the
+                    chore restores the Merriment it took away. Pardoned and Skipped tasks,
+                    on the other hand, are permanently lost since nobody can redo the
+                    chores that were missed between those dates.</strong>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Pardoned collapsible */}
+            <div className="merriment-collapsible">
+              <button
+                className={`merriment-collapsible-header ${expandedTerm === 'pardoned' ? 'expanded' : ''}`}
+                onClick={() => setExpandedTerm(expandedTerm === 'pardoned' ? null : 'pardoned')}
+              >
+                <span>Pardoned ({merrimentData.pardoned})</span>
+                <ChevronRightIcon />
+              </button>
+              {expandedTerm === 'pardoned' && (
+                <div className="merriment-collapsible-content">
+                  <p>
+                    A chore that was automatically marked as resolved, without anyone
+                    actually doing it, because the rotation needed to move forward.
+                  </p>
+                  <p>
+                    When someone completes an overdue chore, any intermediate occurrences
+                    of that same chore between the overdue date and today are pardoned.
+                  </p>
+                  <p>
+                    <strong>Example:</strong> Gabe's Dishes from last Monday is overdue.
+                    Luke had Dishes on Thursday. When Gabe finally completes his, Luke's
+                    Thursday assignment is automatically pardoned since the backlog is cleared.
+                  </p>
+                  <p>
+                    <strong>On the calendar:</strong> Pardoned chores appear as faded,
+                    neutral-colored pills, visually washed out compared to normal assignments.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Skipped collapsible */}
+            <div className="merriment-collapsible">
+              <button
+                className={`merriment-collapsible-header ${expandedTerm === 'skipped' ? 'expanded' : ''}`}
+                onClick={() => setExpandedTerm(expandedTerm === 'skipped' ? null : 'skipped')}
+              >
+                <span>Skipped ({merrimentData.skipped})</span>
+                <ChevronRightIcon />
+              </button>
+              {expandedTerm === 'skipped' && (
+                <div className="merriment-collapsible-content">
+                  <p>
+                    A chore that's frozen because someone earlier in the rotation
+                    hasn't completed theirs yet. The rotation won't advance until
+                    they catch up.
+                  </p>
+                  <p>
+                    <strong>Example:</strong> Gabe's Dishes from Monday is still incomplete.
+                    Luke is assigned Dishes on Thursday, but his assignment is skipped
+                    until Gabe finishes. This way Luke isn't penalized for Gabe's delay.
+                  </p>
+                  <p>
+                    <strong>On the calendar:</strong> Skipped chores show as neutral-colored
+                    pills instead of the person's color. Clicking one shows who is blocking
+                    the rotation.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="merriment-info-actions">
+              <button className="btn-secondary" onClick={() => setShowMerrimentInfo(false)}>
                 Close
               </button>
             </div>

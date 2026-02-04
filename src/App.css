@@ -650,11 +650,11 @@
 }
 
 .chore-pill.skipped {
-  background: var(--border);
+  background: var(--pill-unassigned);
 }
 
 .chore-pill.pardoned {
-  background: var(--border);
+  background: var(--pill-unassigned);
   opacity: 0.4;
 }
 
@@ -699,6 +699,191 @@
 .legend-name {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* Merriment Metric */
+.merriment-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 8px 16px;
+}
+
+.merriment-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.merriment-value {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.merriment-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-style: italic;
+  font-family: 'Source Serif 4', serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.merriment-info-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* Merriment Info Modal */
+.merriment-info-modal {
+  max-width: 440px;
+}
+
+.merriment-info-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.merriment-info-formula {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.merriment-formula-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.merriment-formula-expr {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.merriment-formula-work {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.merriment-formula-work strong {
+  color: var(--text);
+}
+
+.merriment-info-terms {
+  margin-bottom: 12px;
+}
+
+.merriment-term-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.merriment-term-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.merriment-term-list li {
+  font-size: 13px;
+  color: var(--text);
+  padding: 4px 0;
+  line-height: 1.4;
+}
+
+.merriment-term-list li strong {
+  font-weight: 600;
+}
+
+/* Collapsible term sections */
+.merriment-collapsible {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.merriment-collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.merriment-collapsible-header:hover {
+  background: var(--bg-hover);
+}
+
+.merriment-collapsible-header svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.merriment-collapsible-header.expanded svg {
+  transform: rotate(90deg);
+}
+
+.merriment-collapsible-content {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.merriment-collapsible-content p {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+.merriment-collapsible-content strong {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.merriment-info-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Trash Page */
