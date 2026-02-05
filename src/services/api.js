@@ -57,7 +57,10 @@ export const choresApi = {
   uncomplete: (id, { force = false } = {}) => request(`/chores/${id}/uncomplete`, {
     method: 'PATCH',
     body: JSON.stringify({ force })
-  })
+  }),
+  bearMark: (id) => request(`/chores/${id}/bear`, { method: 'POST' }),
+  unBearMark: (id) => request(`/chores/${id}/unbear`, { method: 'POST' }),
+  bearSeen: (id) => request(`/chores/${id}/bear-seen`, { method: 'POST' })
 };
 
 export const trashApi = {

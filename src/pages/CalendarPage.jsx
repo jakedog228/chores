@@ -5,7 +5,7 @@ import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icon
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function CalendarPage() {
+export function CalendarPage({ onRefreshNeeded }) {
   const { selectedUser, people } = useUser();
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
@@ -15,7 +15,10 @@ export function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [selectedChore, setSelectedChore] = useState(null);
   const [showMerrimentInfo, setShowMerrimentInfo] = useState(false);
+  const [showBearConfirm, setShowBearConfirm] = useState(false);
+  const [showUnbearConfirm, setShowUnbearConfirm] = useState(false);
   const [expandedTerm, setExpandedTerm] = useState(null);
+  const [bearPressTimer, setBearPressTimer] = useState(null);
 
   const monthStr = `${currentDate.year}-${String(currentDate.month).padStart(2, '0')}`;
 
@@ -53,6 +56,7 @@ export function CalendarPage() {
     try {
       await choresApi.complete(choreId, selectedUser);
       fetchChores();
+      onRefreshNeeded?.();
       setSelectedChore(null);
     } catch (err) {
       console.error('Failed to complete chore:', err);
@@ -63,6 +67,7 @@ export function CalendarPage() {
     try {
       await choresApi.uncomplete(choreId);
       fetchChores();
+      onRefreshNeeded?.();
       setSelectedChore(null);
     } catch (err) {
       console.error('Failed to uncomplete chore:', err);
@@ -73,6 +78,7 @@ export function CalendarPage() {
     try {
       await choresApi.complete(choreId, selectedUser, { force: true });
       fetchChores();
+      onRefreshNeeded?.();
       setSelectedChore(null);
     } catch (err) {
       console.error('Failed to force-complete chore:', err);
@@ -83,9 +89,56 @@ export function CalendarPage() {
     try {
       await choresApi.uncomplete(choreId, { force: true });
       fetchChores();
+      onRefreshNeeded?.();
       setSelectedChore(null);
     } catch (err) {
       console.error('Failed to force-uncomplete chore:', err);
+    }
+  };
+
+  const handleUnbear = async () => {
+    if (!selectedChore) return;
+    try {
+      await choresApi.unBearMark(selectedChore.id);
+      fetchChores();
+      onRefreshNeeded?.();
+      setShowUnbearConfirm(false);
+      setSelectedChore(null);
+    } catch (err) {
+      console.error('Failed to un-bear:', err);
+    }
+  };
+
+  const handleBearDown = () => {
+    const timer = setTimeout(() => {
+        setShowUnbearConfirm(true);
+    }, 3000);
+    setBearPressTimer(timer);
+  };
+
+  const handleBearUp = () => {
+    if (bearPressTimer) {
+        clearTimeout(bearPressTimer);
+        setBearPressTimer(null);
+    }
+  };
+
+  const handleBearRelease = async () => {
+    if (!selectedChore) return;
+    try {
+      await choresApi.bearMark(selectedChore.id);
+      fetchChores();
+      onRefreshNeeded?.();
+      setShowBearConfirm(false);
+      // Keep modal open to show updated state? Or close?
+      // Prompt says "When this button is pressed... bear-marked until that chore is completed".
+      // Doesn't say to close modal. But we usually refresh data.
+      // Let's close the bear confirm, and keep the main modal open, but we need to update selectedChore.
+      // Easier to just close both or re-fetch and update selectedChore.
+      // For now, I'll close the confirm, re-fetch, and close the main modal to be safe/simple.
+      setSelectedChore(null);
+    } catch (err) {
+      console.error('Failed to release bear:', err);
     }
   };
 
@@ -225,7 +278,10 @@ export function CalendarPage() {
                             onClick={() => setSelectedChore(chore)}
                             title={`${chore.choreName} - ${chore.assignedTo}${isSkipped ? ' (skipped)' : isPardoned ? ' (pardoned)' : ''}`}
                           >
-                            <span className="chore-pill-text">{shortenChore(chore.choreName)}</span>
+                            <span className="chore-pill-text">
+                              {shortenChore(chore.choreName)}
+                              {chore.bearMarked && <span style={{ marginLeft: '4px' }}>🐻</span>}
+                            </span>
                           </button>
                         );
                       })}
@@ -266,7 +322,27 @@ export function CalendarPage() {
       {selectedChore && (
         <div className="modal-overlay" onClick={() => setSelectedChore(null)}>
           <div className="modal chore-modal" onClick={e => e.stopPropagation()}>
-            <h2>{selectedChore.choreName}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2>{selectedChore.choreName}</h2>
+                {/* Bear Button: Only for overdue, incomplete, unskipped chores */}
+                {(!selectedChore.completedAt && !selectedChore.skipped && selectedChore.dueDate <= todayStr) && (
+                    <button
+                        className="btn-secondary"
+                        style={{ fontSize: '1.2rem', padding: '4px 8px' }}
+                        onClick={() => {
+                           if (!showUnbearConfirm) setShowBearConfirm(true);
+                        }}
+                        onMouseDown={handleBearDown}
+                        onMouseUp={handleBearUp}
+                        onMouseLeave={handleBearUp}
+                        onTouchStart={handleBearDown}
+                        onTouchEnd={handleBearUp}
+                        title="RELEASE THE BEAR?!"
+                    >
+                        🐻
+                    </button>
+                )}
+            </div>
             <div className="chore-detail-info">
               <p>
                 <strong>Assigned to:</strong>{' '}
@@ -325,6 +401,53 @@ export function CalendarPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Bear Confirmation Modal */}
+      {showBearConfirm && (
+        <div className="modal-overlay" style={{ zIndex: 300 }} onClick={() => setShowBearConfirm(false)}>
+            <div className="modal" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                <h2>RELEASE THE BEAR?!</h2>
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
+                    <button
+                        className="btn-primary"
+                        style={{ background: 'var(--color-critical)', borderColor: 'var(--color-critical)' }}
+                        onClick={handleBearRelease}
+                    >
+                        YES!!!
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        onClick={() => setShowBearConfirm(false)}
+                    >
+                        no :(
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Un-Bear Confirmation Modal */}
+      {showUnbearConfirm && (
+        <div className="modal-overlay" style={{ zIndex: 301 }} onClick={() => setShowUnbearConfirm(false)}>
+            <div className="modal" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                <h2>UN-BEAR?!</h2>
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
+                    <button
+                        className="btn-primary"
+                        onClick={handleUnbear}
+                    >
+                        YES
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        onClick={() => setShowUnbearConfirm(false)}
+                    >
+                        NO
+                    </button>
+                </div>
+            </div>
         </div>
       )}
 

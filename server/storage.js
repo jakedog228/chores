@@ -34,7 +34,7 @@ export async function getPeople() {
 export async function getChoresByMonth(yearMonth) {
   const db = getDb();
   const result = await db.execute({
-    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by, exception
+    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by, exception, bear_marked
           FROM chores
           WHERE due_date LIKE ?
           ORDER BY due_date ASC, chore_name ASC`,
@@ -47,14 +47,15 @@ export async function getChoresByMonth(yearMonth) {
     dueDate: row.due_date,
     completedAt: row.completed_at,
     completedBy: row.completed_by,
-    exception: row.exception === 1
+    exception: row.exception === 1,
+    bearMarked: row.bear_marked === 1
   }));
 }
 
 export async function getChoresDueForUser(user, today) {
   const db = getDb();
   const result = await db.execute({
-    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by
+    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by, bear_marked, bear_scare_shown
           FROM chores
           WHERE assigned_to = ? AND completed_at IS NULL AND due_date <= ?
           ORDER BY due_date ASC`,
@@ -66,7 +67,9 @@ export async function getChoresDueForUser(user, today) {
     assignedTo: row.assigned_to,
     dueDate: row.due_date,
     completedAt: row.completed_at,
-    completedBy: row.completed_by
+    completedBy: row.completed_by,
+    bearMarked: row.bear_marked === 1,
+    bearScareShown: row.bear_scare_shown === 1
   }));
 }
 
@@ -145,6 +148,30 @@ export async function forceUncompleteChore(id) {
   const db = getDb();
   await db.execute({
     sql: 'UPDATE chores SET completed_at = NULL, completed_by = NULL, exception = 1 WHERE id = ?',
+    args: [id]
+  });
+}
+
+export async function bearMarkChore(id) {
+  const db = getDb();
+  await db.execute({
+    sql: 'UPDATE chores SET bear_marked = 1 WHERE id = ?',
+    args: [id]
+  });
+}
+
+export async function unBearMarkChore(id) {
+  const db = getDb();
+  await db.execute({
+    sql: 'UPDATE chores SET bear_marked = 0, bear_scare_shown = 0 WHERE id = ?',
+    args: [id]
+  });
+}
+
+export async function ackBearScare(id) {
+  const db = getDb();
+  await db.execute({
+    sql: 'UPDATE chores SET bear_scare_shown = 1 WHERE id = ?',
     args: [id]
   });
 }

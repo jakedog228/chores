@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS chores (
   due_date TEXT NOT NULL,
   completed_at TEXT,
   completed_by TEXT,
-  exception INTEGER NOT NULL DEFAULT 0
+  exception INTEGER NOT NULL DEFAULT 0,
+  bear_marked INTEGER NOT NULL DEFAULT 0,
+  bear_scare_shown INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS trash_state (
@@ -131,6 +133,20 @@ async function initializeDatabase() {
   try {
     await db.execute('ALTER TABLE chores ADD COLUMN exception INTEGER NOT NULL DEFAULT 0');
     console.log('Added exception column to chores table.');
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    await db.execute('ALTER TABLE chores ADD COLUMN bear_marked INTEGER NOT NULL DEFAULT 0');
+    console.log('Added bear_marked column to chores table.');
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    await db.execute('ALTER TABLE chores ADD COLUMN bear_scare_shown INTEGER NOT NULL DEFAULT 0');
+    console.log('Added bear_scare_shown column to chores table.');
   } catch (e) {
     // Column already exists
   }

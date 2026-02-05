@@ -8,6 +8,9 @@ import {
   uncompleteChore,
   forceCompleteChore,
   forceUncompleteChore,
+  bearMarkChore,
+  unBearMarkChore,
+  ackBearScare,
   getEarliestIncompletePerChore,
   getTrashState,
   getTrashVotes,
@@ -94,6 +97,24 @@ apiRouter.patch('/chores/:id/uncomplete', async (req, res) => {
   } else {
     await uncompleteChore(id);
   }
+  res.json({ success: true });
+});
+
+apiRouter.post('/chores/:id/bear', async (req, res) => {
+  const { id } = req.params;
+  await bearMarkChore(id);
+  res.json({ success: true });
+});
+
+apiRouter.post('/chores/:id/unbear', async (req, res) => {
+  const { id } = req.params;
+  await unBearMarkChore(id);
+  res.json({ success: true });
+});
+
+apiRouter.post('/chores/:id/bear-seen', async (req, res) => {
+  const { id } = req.params;
+  await ackBearScare(id);
   res.json({ success: true });
 });
 

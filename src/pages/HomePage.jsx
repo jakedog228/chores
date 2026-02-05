@@ -7,6 +7,7 @@ export function HomePage({ onRefreshNeeded }) {
   const { selectedUser } = useUser();
   const [data, setData] = useState({ due: [], upcoming: [] });
   const [loading, setLoading] = useState(true);
+  const [selectedChore, setSelectedChore] = useState(null);
 
   const fetchData = useCallback(async () => {
     if (!selectedUser) return;
@@ -30,8 +31,20 @@ export function HomePage({ onRefreshNeeded }) {
       await choresApi.complete(choreId, selectedUser);
       fetchData();
       onRefreshNeeded?.();
+      setSelectedChore(null);
     } catch (err) {
       console.error('Failed to complete chore:', err);
+    }
+  };
+
+  const handleUncompleteChore = async (choreId) => {
+    try {
+      await choresApi.uncomplete(choreId);
+      fetchData();
+      onRefreshNeeded?.();
+      setSelectedChore(null);
+    } catch (err) {
+      console.error('Failed to uncomplete chore:', err);
     }
   };
 
@@ -74,7 +87,12 @@ export function HomePage({ onRefreshNeeded }) {
           </h2>
           <div className="home-items">
             {data.due.map((item, idx) => (
-              <div key={item.id || `trash-${idx}`} className="home-item due">
+              <div
+                key={item.id || `trash-${idx}`}
+                className="home-item due"
+                style={item.type !== 'trash' ? { cursor: 'pointer' } : undefined}
+                onClick={item.type !== 'trash' ? () => setSelectedChore(item) : undefined}
+              >
                 {item.type === 'trash' ? (
                   <>
                     <button
@@ -91,13 +109,11 @@ export function HomePage({ onRefreshNeeded }) {
                   </>
                 ) : (
                   <>
-                    <button
-                      className="home-checkbox"
-                      onClick={() => handleCompleteChore(item.id)}
-                      title="Mark as done"
-                    />
                     <div className="home-item-content">
-                      <span className="home-item-name">{item.choreName}</span>
+                      <span className="home-item-name">
+                        {item.choreName}
+                        {item.bearMarked && <span style={{ marginLeft: '6px' }}>🐻</span>}
+                      </span>
                       <span className="home-item-meta">Due {formatDueDate(item.dueDate)}</span>
                     </div>
                   </>
@@ -113,7 +129,12 @@ export function HomePage({ onRefreshNeeded }) {
           <h2 className="home-section-title upcoming">Upcoming</h2>
           <div className="home-items">
             {data.upcoming.map((item, idx) => (
-              <div key={item.id || `trash-upcoming-${idx}`} className="home-item upcoming">
+              <div
+                key={item.id || `trash-upcoming-${idx}`}
+                className="home-item upcoming"
+                style={item.type !== 'trash' ? { cursor: 'pointer' } : undefined}
+                onClick={item.type !== 'trash' ? () => setSelectedChore(item) : undefined}
+              >
                 {item.type === 'trash' ? (
                   <>
                     <div className="home-checkbox-placeholder" />
@@ -124,11 +145,6 @@ export function HomePage({ onRefreshNeeded }) {
                   </>
                 ) : (
                   <>
-                    <button
-                      className="home-checkbox"
-                      onClick={() => handleCompleteChore(item.id)}
-                      title="Complete ahead of time"
-                    />
                     <div className="home-item-content">
                       <span className="home-item-name">{item.choreName}</span>
                       <span className="home-item-meta">Due {formatDueDate(item.dueDate)}</span>
@@ -146,8 +162,59 @@ export function HomePage({ onRefreshNeeded }) {
           <p className="empty-message">All caught up! No chores due.</p>
         </div>
       )}
+
+      {selectedChore && (
+        <div className="modal-overlay" onClick={() => setSelectedChore(null)}>
+          <div className="modal chore-modal" onClick={e => e.stopPropagation()}>
+            <h2>{selectedChore.choreName}</h2>
+            <div className="chore-detail-info">
+              <p><strong>Assigned to:</strong> {selectedChore.assignedTo}</p>
+              <p><strong>Due:</strong> {formatDate(selectedChore.dueDate)}</p>
+              {selectedChore.completedAt && (
+                <>
+                  <p><strong>Completed:</strong> {formatDateTime(selectedChore.completedAt)}</p>
+                  <p><strong>Completed by:</strong> {selectedChore.completedBy}</p>
+                </>
+              )}
+            </div>
+            <div className="chore-detail-actions">
+              {selectedChore.completedAt ? (
+                <button
+                  className="btn-secondary"
+                  onClick={() => handleUncompleteChore(selectedChore.id)}
+                >
+                  Mark Incomplete
+                </button>
+              ) : (
+                <button
+                  className="btn-primary"
+                  onClick={() => handleCompleteChore(selectedChore.id)}
+                >
+                  <CheckIcon /> Mark Complete
+                </button>
+              )}
+              <button className="btn-secondary" onClick={() => setSelectedChore(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+function formatDate(dateStr) {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatDateTime(isoStr) {
+  const date = new Date(isoStr);
+  return date.toLocaleString('en-US', {
+    month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit'
+  });
 }
 
 function formatDueDate(dateStr) {

@@ -11,6 +11,8 @@ import { ThemeProvider } from './hooks/useTheme';
 import { UserProvider, useUser } from './hooks/useUser';
 import { useAppBadge } from './hooks/useAppBadge';
 import { homeApi, peopleApi } from './services/api';
+import { BearScare } from './components/ui/BearScare';
+import { BearPersistent } from './components/ui/BearPersistent';
 import './App.css';
 
 function LoadingScreen() {
@@ -61,6 +63,7 @@ function MainApp() {
   const { logout } = useAuth();
   const { selectedUser } = useUser();
   const [badgeCount, setBadgeCount] = useState(0);
+  const [homeData, setHomeData] = useState({ due: [], upcoming: [] });
   const [showUserSelection, setShowUserSelection] = useState(() => {
     const savedUser = localStorage.getItem('chores_selected_user');
     return !savedUser;
@@ -68,12 +71,13 @@ function MainApp() {
 
   useAppBadge(badgeCount);
 
-  // Fetch badge count
+  // Fetch badge count and bear data
   const updateBadgeCount = useCallback(() => {
     if (!selectedUser) return;
 
     homeApi.get(selectedUser).then(data => {
       setBadgeCount(data.due.length);
+      setHomeData(data);
     }).catch(() => {});
   }, [selectedUser]);
 
@@ -98,6 +102,8 @@ function MainApp() {
 
   return (
     <div className="app">
+      <BearScare dueChores={homeData.due} onScareComplete={updateBadgeCount} />
+      <BearPersistent dueChores={homeData.due} />
       <div className="app-header">
         <ThemeSwitcher />
         <UserSwitcher />
@@ -107,7 +113,7 @@ function MainApp() {
       </div>
 
       {activeTab === 'home' && <HomePage onRefreshNeeded={updateBadgeCount} />}
-      {activeTab === 'calendar' && <CalendarPage />}
+      {activeTab === 'calendar' && <CalendarPage onRefreshNeeded={updateBadgeCount} />}
       {activeTab === 'trash' && <TrashPage />}
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
