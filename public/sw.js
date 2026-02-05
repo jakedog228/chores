@@ -4,18 +4,21 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/icon.png'
 ];
+const IS_DEV = ['localhost', '127.0.0.1'].includes(self.location.hostname);
 
-// Install: cache app shell
+// Install: cache app shell (production only)
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
+  if (!IS_DEV) {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll(STATIC_ASSETS);
+      })
+    );
+  }
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches, claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -27,8 +30,10 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static assets
+// Fetch: skip caching in dev, cache-first for static assets in production
 self.addEventListener('fetch', (event) => {
+  if (IS_DEV) return;
+
   const url = new URL(event.request.url);
 
   // Don't cache API requests
@@ -49,6 +54,30 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => cached);
 
       return cached || networkFetch;
+    })
+  );
+});
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Chore Calendar', {
+      body: data.body || '',
+      icon: '/icon.png',
+      badge: '/icon.png'
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      return clients.openWindow('/');
     })
   );
 });

@@ -64,6 +64,26 @@
   color: var(--text);
 }
 
+/* Notification Toggle */
+.notification-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notification-toggle:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
 /* Theme Switcher */
 .theme-switcher {
   position: relative;

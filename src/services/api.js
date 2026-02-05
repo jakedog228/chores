@@ -82,3 +82,15 @@ export const trashApi = {
 export const homeApi = {
   get: (user) => request(`/home?user=${encodeURIComponent(user)}&today=${getLocalDate()}`)
 };
+
+export const pushApi = {
+  getVapidKey: () => request('/push/vapid-key'),
+  subscribe: (userName, subscription) => request('/push/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ userName, subscription })
+  }),
+  unsubscribe: (endpoint) => request('/push/unsubscribe', {
+    method: 'POST',
+    body: JSON.stringify({ endpoint })
+  })
+};

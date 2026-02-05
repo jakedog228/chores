@@ -59,6 +59,15 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   attempts INTEGER DEFAULT 0,
   blocked_until INTEGER
 );
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id TEXT PRIMARY KEY,
+  user_name TEXT NOT NULL,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
 `;
 
 function weeklyDatesOnOrAfter(anchor, weekdays, endDate) {
@@ -147,6 +156,20 @@ async function initializeDatabase() {
   try {
     await db.execute('ALTER TABLE chores ADD COLUMN bear_scare_shown INTEGER NOT NULL DEFAULT 0');
     console.log('Added bear_scare_shown column to chores table.');
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    await db.execute('ALTER TABLE auth_config ADD COLUMN vapid_public_key TEXT');
+    console.log('Added vapid_public_key column to auth_config table.');
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    await db.execute('ALTER TABLE auth_config ADD COLUMN vapid_private_key TEXT');
+    console.log('Added vapid_private_key column to auth_config table.');
   } catch (e) {
     // Column already exists
   }

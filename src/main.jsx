@@ -9,9 +9,7 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 );
 
-// Unregister any previously installed service workers
+// Register service worker for push notifications (caching disabled on localhost)
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(registrations => {
-    registrations.forEach(r => r.unregister());
-  });
+  navigator.serviceWorker.register('/sw.js');
 }

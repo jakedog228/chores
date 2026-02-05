@@ -13,6 +13,7 @@ import { useAppBadge } from './hooks/useAppBadge';
 import { homeApi, peopleApi } from './services/api';
 import { BearScare } from './components/ui/BearScare';
 import { BearPersistent } from './components/ui/BearPersistent';
+import { NotificationToggle } from './components/ui/NotificationPrompt';
 import './App.css';
 
 function LoadingScreen() {
@@ -105,6 +106,7 @@ function MainApp() {
       <BearScare dueChores={homeData.due} onScareComplete={updateBadgeCount} />
       <BearPersistent dueChores={homeData.due} />
       <div className="app-header">
+        <NotificationToggle />
         <ThemeSwitcher />
         <UserSwitcher />
         <button className="logout-btn" onClick={logout} title="Sign out">

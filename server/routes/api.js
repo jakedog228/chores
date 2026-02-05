@@ -18,8 +18,12 @@ import {
   removeTrashVote,
   completeTrash,
   getCompletedPositions,
-  getTrashHistory
+  getTrashHistory,
+  getChoreById,
+  savePushSubscription,
+  deletePushSubscription
 } from '../storage.js';
+import { getVapidPublicKey, sendNotificationToUser } from '../push.js';
 
 export const apiRouter = Router();
 
@@ -103,6 +107,16 @@ apiRouter.patch('/chores/:id/uncomplete', async (req, res) => {
 apiRouter.post('/chores/:id/bear', async (req, res) => {
   const { id } = req.params;
   await bearMarkChore(id);
+
+  // Send push notification to chore owner (fire-and-forget)
+  const chore = await getChoreById(id);
+  if (chore) {
+    sendNotificationToUser(chore.assignedTo, {
+      title: '\u{1F43B}',
+      body: `${chore.choreName}..!`
+    }).catch(() => {});
+  }
+
   res.json({ success: true });
 });
 
@@ -164,6 +178,23 @@ apiRouter.post('/trash/vote-full', async (req, res) => {
   }
 
   const result = await addTrashVote(voter);
+
+  // Send push notification to next-up person (fire-and-forget)
+  if (!result.alreadyVoted) {
+    const completedPositions = await getCompletedPositions();
+    let nextUpPosition = 1;
+    while (completedPositions[nextUpPosition]) {
+      nextUpPosition++;
+    }
+    const nextUpPerson = getTrashPerson(nextUpPosition);
+    if (nextUpPerson !== voter) {
+      sendNotificationToUser(nextUpPerson, {
+        title: '\u{1F5D1}\u{FE0F}',
+        body: "Nnngh... I'm so full..."
+      }).catch(() => {});
+    }
+  }
+
   res.json(result);
 });
 
@@ -208,6 +239,31 @@ apiRouter.post('/trash/complete', async (req, res) => {
   const assignedTo = getTrashPerson(targetPosition);
   const result = await completeTrash(completedBy, assignedTo, targetPosition);
   res.json(result);
+});
+
+// ============ Push Notifications ============
+
+apiRouter.get('/push/vapid-key', async (req, res) => {
+  const publicKey = await getVapidPublicKey();
+  res.json({ publicKey });
+});
+
+apiRouter.post('/push/subscribe', async (req, res) => {
+  const { userName, subscription } = req.body;
+  if (!userName || !subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return res.status(400).json({ error: 'userName and subscription (with endpoint, keys.p256dh, keys.auth) required' });
+  }
+  await savePushSubscription(userName, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth);
+  res.json({ success: true });
+});
+
+apiRouter.post('/push/unsubscribe', async (req, res) => {
+  const { endpoint } = req.body;
+  if (!endpoint) {
+    return res.status(400).json({ error: 'endpoint is required' });
+  }
+  await deletePushSubscription(endpoint);
+  res.json({ success: true });
 });
 
 // ============ Home ============

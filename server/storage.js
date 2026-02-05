@@ -304,6 +304,74 @@ export async function getEarliestIncompletePerChore() {
   return map;
 }
 
+// ============ Push Notifications ============
+
+export async function getVapidKeys() {
+  const db = getDb();
+  const result = await db.execute('SELECT vapid_public_key, vapid_private_key FROM auth_config WHERE id = 1');
+  const row = result.rows[0];
+  return {
+    publicKey: row?.vapid_public_key || null,
+    privateKey: row?.vapid_private_key || null
+  };
+}
+
+export async function saveVapidKeys(publicKey, privateKey) {
+  const db = getDb();
+  await db.execute({
+    sql: 'UPDATE auth_config SET vapid_public_key = ?, vapid_private_key = ? WHERE id = 1',
+    args: [publicKey, privateKey]
+  });
+}
+
+export async function savePushSubscription(userName, endpoint, p256dh, auth) {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  await db.execute({
+    sql: `INSERT INTO push_subscriptions (id, user_name, endpoint, p256dh, auth, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(endpoint) DO UPDATE SET user_name = ?, p256dh = ?, auth = ?, created_at = ?`,
+    args: [id, userName, endpoint, p256dh, auth, createdAt, userName, p256dh, auth, createdAt]
+  });
+}
+
+export async function getPushSubscriptionsForUser(userName) {
+  const db = getDb();
+  const result = await db.execute({
+    sql: 'SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_name = ?',
+    args: [userName]
+  });
+  return result.rows.map(row => ({
+    endpoint: row.endpoint,
+    keys: { p256dh: row.p256dh, auth: row.auth }
+  }));
+}
+
+export async function deletePushSubscription(endpoint) {
+  const db = getDb();
+  await db.execute({
+    sql: 'DELETE FROM push_subscriptions WHERE endpoint = ?',
+    args: [endpoint]
+  });
+}
+
+export async function getChoreById(id) {
+  const db = getDb();
+  const result = await db.execute({
+    sql: 'SELECT id, chore_name, assigned_to, due_date FROM chores WHERE id = ?',
+    args: [id]
+  });
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    id: row.id,
+    choreName: row.chore_name,
+    assignedTo: row.assigned_to,
+    dueDate: row.due_date
+  };
+}
+
 // ============ Rate Limiting ============
 
 export async function getRateLimitAttempts(ip) {
