@@ -1461,22 +1461,325 @@
   background: var(--bg-hover);
 }
 
-.bear-persistent {
+.bear-persistent-wrapper {
   position: fixed;
-  bottom: 60px; /* Sits above the nav bar (approx 60-70px high) */
+  bottom: 62px;
   right: 10px;
+  z-index: 200;
+}
+
+.bear-persistent {
   width: 60px;
   height: auto;
-  z-index: 200; /* Above nav but below modals */
-  pointer-events: none;
+  cursor: pointer;
   filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
+  transition: transform 0.2s ease, filter 0.3s ease;
+  animation: bear-idle-bob 3s ease-in-out infinite;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bear-persistent:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(2px 4px 10px rgba(0,0,0,0.6));
+}
+
+.bear-persistent:active {
+  transform: scale(0.95);
+}
+
+.bear-persistent.bear-shake {
+  animation: bear-clicked-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes bear-idle-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(1deg); }
+  75% { transform: translateY(-1px) rotate(-1deg); }
+}
+
+@keyframes bear-clicked-shake {
+  0% { transform: rotate(0deg) scale(1.1); }
+  15% { transform: rotate(12deg) scale(1.15); }
+  30% { transform: rotate(-10deg) scale(1.12); }
+  45% { transform: rotate(8deg) scale(1.1); }
+  60% { transform: rotate(-6deg) scale(1.08); }
+  75% { transform: rotate(3deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+/* Bear roar popup */
+.bear-roar-popup {
+  position: absolute;
+  transform: translateX(30%);
+  margin-bottom: 8px;
+  animation: bear-roar-appear 0.15s ease-out, bear-roar-float 1.3s ease-in-out forwards;
+  pointer-events: none;
+}
+
+.bear-roar-text {
+  font-family: 'Impact', sans-serif;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #ff4136;
+  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 0 2px 4px rgba(0,0,0,0.2);
+  white-space: nowrap;
+  animation: bear-text-wiggle 0.4s ease-in-out 3;
+}
+
+@keyframes bear-roar-appear {
+  from { opacity: 0; transform: translateX(30%) translateY(10px) scale(0.5); }
+  to { opacity: 1; transform: translateX(30%) translateY(0) scale(1); }
+}
+
+@keyframes bear-roar-float {
+  0% { opacity: 1; }
+  70% { opacity: 1; transform: translateX(30%) translateY(-20px); }
+  100% { opacity: 0; transform: translateX(30%) translateY(-40px); }
+}
+
+@keyframes bear-text-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
 }
 
 @media (max-width: 600px) {
+  .bear-persistent-wrapper {
+    bottom: 70px;
+    right: 5px;
+  }
   .bear-persistent {
-     bottom: 70px; /* Adjust for mobile safe areas if needed */
-     right: 5px;
-     width: 50px;
+    width: 50px;
+  }
+}
+
+/* Santa Persistent */
+.santa-persistent-wrapper {
+  position: fixed;
+  bottom: 62px;
+  left: 10px;
+  z-index: 200;
+}
+
+.santa-persistent {
+  width: auto;
+  height: 75px;
+  cursor: pointer;
+  filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.4));
+  transition: transform 0.2s ease, filter 0.3s ease;
+  animation: santa-idle-bob 3s ease-in-out infinite;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.santa-persistent:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(2px 4px 12px rgba(0,0,0,0.5));
+}
+
+.santa-persistent:active {
+  transform: scale(0.95);
+}
+
+.santa-persistent.santa-shake {
+  animation: santa-clicked-shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.santa-persistent.santa-glow {
+  filter: drop-shadow(0 0 12px rgba(255, 50, 50, 0.5)) drop-shadow(0 0 24px rgba(0, 180, 0, 0.3));
+}
+
+@keyframes santa-idle-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-1deg); }
+  75% { transform: translateY(-1px) rotate(1deg); }
+}
+
+@keyframes santa-clicked-shake {
+  0% { transform: rotate(0deg) scale(1.1); }
+  15% { transform: rotate(-12deg) scale(1.15); }
+  30% { transform: rotate(10deg) scale(1.12); }
+  45% { transform: rotate(-8deg) scale(1.1); }
+  60% { transform: rotate(6deg) scale(1.08); }
+  75% { transform: rotate(-3deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+/* Ho Ho Ho popup */
+.santa-hoho-popup {
+  position: absolute;
+  transform: translateX(-30%);
+  margin-bottom: 8px;
+  animation: santa-hoho-appear 0.15s ease-out, santa-hoho-float 1.3s ease-in-out forwards;
+  pointer-events: none;
+}
+
+.santa-hoho-text {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #c0392b;
+  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 0 2px 4px rgba(0,0,0,0.2);
+  white-space: nowrap;
+  animation: santa-text-wiggle 0.4s ease-in-out 3;
+}
+
+@keyframes santa-hoho-appear {
+  from { opacity: 0; transform: translateX(-30%) translateY(10px) scale(0.5); }
+  to { opacity: 1; transform: translateX(-30%) translateY(0) scale(1); }
+}
+
+@keyframes santa-hoho-float {
+  0% { opacity: 1; }
+  70% { opacity: 1; transform: translateX(-30%) translateY(-20px); }
+  100% { opacity: 0; transform: translateX(-30%) translateY(-40px); }
+}
+
+@keyframes santa-text-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+/* Merriment badge */
+.santa-merriment-badge {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg-card);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: santa-badge-pop 0.3s ease-out;
+}
+
+.santa-merriment-badge:hover {
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+}
+
+.santa-merriment-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.santa-merriment-progress {
+  transition: stroke-dasharray 1s ease;
+}
+
+.santa-merriment-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  z-index: 1;
+}
+
+/* Tooltip */
+.santa-tooltip {
+  position: absolute;
+  top: 100%;
+  left: calc(50% + 24px);
+  margin-top: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  text-align: center;
+  white-space: nowrap;
+  animation: santa-tooltip-pop 0.2s ease-out;
+  cursor: pointer;
+  z-index: 201;
+}
+
+.santa-tooltip-mood {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.santa-tooltip-percent {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+@keyframes santa-tooltip-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes santa-badge-pop {
+  from { opacity: 0; transform: translateX(-50%) scale(0.5); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+/* Christmas mode theme override */
+.christmas-mode {
+  --accent: #c0392b !important;
+  --accent-light: rgba(192, 57, 43, 0.12) !important;
+}
+
+.christmas-mode .nav {
+  background: linear-gradient(135deg, #1a472a 0%, #2d5a27 50%, #1a472a 100%) !important;
+  border-top-color: #c0392b !important;
+}
+
+.christmas-mode .nav-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.christmas-mode .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.christmas-mode .nav-btn.active {
+  background: rgba(192, 57, 43, 0.3);
+  color: #ff6b6b;
+}
+
+.christmas-mode .app-header {
+  background: linear-gradient(135deg, #c0392b 0%, #96281b 100%);
+}
+
+.christmas-mode .app-header button {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.christmas-mode .santa-hoho-text {
+  font-size: 1.8rem;
+  color: #27ae60;
+  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 0 0 20px rgba(39, 174, 96, 0.5);
+}
+
+@media (max-width: 600px) {
+  .santa-persistent-wrapper {
+    bottom: 70px;
+    left: 5px;
+  }
+  .santa-persistent {
+    height: 60px;
+  }
+  .santa-merriment-badge {
+    width: 34px;
+    height: 34px;
+  }
+  .santa-merriment-text {
+    font-size: 10px;
   }
 }
 

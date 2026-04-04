@@ -13,6 +13,7 @@ import { useAppBadge } from './hooks/useAppBadge';
 import { homeApi, peopleApi, choreStatusApi } from './services/api';
 import { BearScare } from './components/ui/BearScare';
 import { BearPersistent } from './components/ui/BearPersistent';
+import { SantaPersistent } from './components/ui/SantaPersistent';
 import { NotificationToggle } from './components/ui/NotificationPrompt';
 import './App.css';
 
@@ -147,6 +148,7 @@ function MainApp() {
     <div className="app">
       <BearScare dueChores={homeData.due} onScareComplete={updateBadgeCount} />
       <BearPersistent dueChores={homeData.due} />
+      <SantaPersistent />
       <div className="app-header">
         <NotificationToggle />
         <ThemeSwitcher />
