@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
 import { UserProvider, useUser } from './hooks/useUser';
 import { useAppBadge } from './hooks/useAppBadge';
-import { homeApi, peopleApi } from './services/api';
+import { homeApi, peopleApi, choreStatusApi } from './services/api';
 import { BearScare } from './components/ui/BearScare';
 import { BearPersistent } from './components/ui/BearPersistent';
 import { NotificationToggle } from './components/ui/NotificationPrompt';
@@ -59,12 +59,52 @@ function UserSelectionModal({ onDismiss }) {
   );
 }
 
+function StatusPanelIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
+
+function formatStatusDetail(chore) {
+  if (chore.status === 'green') {
+    if (chore.lastCompleted) {
+      const completedDate = new Date(chore.lastCompleted.completedAt);
+      const dateStr = completedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      let detail = `${chore.lastCompleted.completedBy} completed ${dateStr}`;
+      if (chore.currentlyDue) {
+        detail += ` · Next: ${chore.currentlyDue.assignedTo}`;
+      }
+      return detail;
+    }
+    return 'Up to date';
+  }
+
+  if (chore.status === 'yellow') {
+    const who = chore.currentlyDue?.assignedTo || '?';
+    if (chore.daysOverdue === 0) return `Due today · ${who}'s turn`;
+    if (chore.daysOverdue === 1) return `Due yesterday · ${who}'s turn`;
+    return `${chore.daysOverdue} days overdue · ${who}'s turn`;
+  }
+
+  const who = chore.currentlyDue?.assignedTo || '?';
+  return `${chore.daysOverdue} days overdue · ${who}'s turn`;
+}
+
 function MainApp() {
   const [activeTab, setActiveTab] = useState('home');
   const { logout } = useAuth();
   const { selectedUser } = useUser();
   const [badgeCount, setBadgeCount] = useState(0);
   const [homeData, setHomeData] = useState({ due: [], upcoming: [] });
+  const [choreStatuses, setChoreStatuses] = useState([]);
+  const [statusPanelOpen, setStatusPanelOpen] = useState(false);
   const [showUserSelection, setShowUserSelection] = useState(() => {
     const savedUser = localStorage.getItem('chores_selected_user');
     return !savedUser;
@@ -80,6 +120,8 @@ function MainApp() {
       setBadgeCount(data.due.length);
       setHomeData(data);
     }).catch(() => {});
+
+    choreStatusApi.get().then(setChoreStatuses).catch(() => {});
   }, [selectedUser]);
 
   // Update badge on mount, user change, and when app regains focus
@@ -113,6 +155,55 @@ function MainApp() {
           Sign out
         </button>
       </div>
+
+      {choreStatuses.length > 0 && (
+        <button
+          className="status-panel-toggle"
+          onClick={() => setStatusPanelOpen(true)}
+          title="Chore status"
+        >
+          <StatusPanelIcon />
+          <span className="status-panel-toggle-label">Status</span>
+          {choreStatuses.some(c => c.status === 'red') && (
+            <span className="status-panel-badge red" />
+          )}
+          {!choreStatuses.some(c => c.status === 'red') && choreStatuses.some(c => c.status === 'yellow') && (
+            <span className="status-panel-badge yellow" />
+          )}
+        </button>
+      )}
+
+      {statusPanelOpen && (
+        <div className="status-panel-overlay" onClick={() => setStatusPanelOpen(false)}>
+          <div className="status-panel" onClick={e => e.stopPropagation()}>
+            <div className="status-panel-header">
+              <h2>Chore Status</h2>
+              <button
+                className="status-panel-close"
+                onClick={() => setStatusPanelOpen(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="status-panel-body">
+              {choreStatuses.map(chore => (
+                <div
+                  key={chore.choreName}
+                  className={`chore-status-card status-${chore.status}`}
+                >
+                  <div className="chore-status-indicator" />
+                  <div className="chore-status-content">
+                    <span className="chore-status-name">{chore.choreName}</span>
+                    <span className="chore-status-detail">
+                      {formatStatusDetail(chore)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'home' && <HomePage onRefreshNeeded={updateBadgeCount} />}
       {activeTab === 'calendar' && <CalendarPage onRefreshNeeded={updateBadgeCount} />}

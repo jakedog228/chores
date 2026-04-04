@@ -286,6 +286,32 @@ export async function getTrashHistory(limit = 10) {
   }));
 }
 
+// ============ Chore Status ============
+
+export async function getLastCompletedPerChore() {
+  const db = getDb();
+  const result = await db.execute(
+    `SELECT c.chore_name, c.completed_at, c.completed_by, c.due_date
+     FROM chores c
+     INNER JOIN (
+       SELECT chore_name, MAX(completed_at) as max_completed
+       FROM chores
+       WHERE completed_at IS NOT NULL AND completed_by != 'skipped'
+       GROUP BY chore_name
+     ) latest ON c.chore_name = latest.chore_name AND c.completed_at = latest.max_completed
+     WHERE c.completed_by != 'skipped'`
+  );
+  const map = {};
+  for (const row of result.rows) {
+    map[row.chore_name] = {
+      completedAt: row.completed_at,
+      completedBy: row.completed_by,
+      dueDate: row.due_date
+    };
+  }
+  return map;
+}
+
 // ============ Skip Logic ============
 
 // Returns the earliest incomplete chore for each chore_name

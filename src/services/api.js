@@ -83,6 +83,10 @@ export const homeApi = {
   get: (user) => request(`/home?user=${encodeURIComponent(user)}&today=${getLocalDate()}`)
 };
 
+export const choreStatusApi = {
+  get: () => request(`/chore-status?today=${getLocalDate()}`)
+};
+
 export const pushApi = {
   getVapidKey: () => request('/push/vapid-key'),
   subscribe: (userName, subscription) => request('/push/subscribe', {

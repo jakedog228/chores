@@ -12,6 +12,7 @@ import {
   unBearMarkChore,
   ackBearScare,
   getEarliestIncompletePerChore,
+  getLastCompletedPerChore,
   getTrashState,
   getTrashVotes,
   addTrashVote,
@@ -264,6 +265,71 @@ apiRouter.post('/push/unsubscribe', async (req, res) => {
   }
   await deletePushSubscription(endpoint);
   res.json({ success: true });
+});
+
+// ============ Chore Status ============
+
+apiRouter.get('/chore-status', async (req, res) => {
+  const today = req.query.today;
+  if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+    return res.status(400).json({ error: 'today query parameter required (YYYY-MM-DD format)' });
+  }
+
+  const [earliestIncomplete, lastCompleted] = await Promise.all([
+    getEarliestIncompletePerChore(),
+    getLastCompletedPerChore()
+  ]);
+
+  const choreNames = [...new Set([
+    ...Object.keys(earliestIncomplete),
+    ...Object.keys(lastCompleted)
+  ])];
+
+  const statuses = choreNames.map(name => {
+    const incomplete = earliestIncomplete[name];
+    const completed = lastCompleted[name];
+
+    let status, daysOverdue = 0;
+
+    if (!incomplete) {
+      status = 'green';
+    } else {
+      const dueDate = new Date(incomplete.dueDate + 'T00:00:00');
+      const todayDate = new Date(today + 'T00:00:00');
+      const diffDays = Math.floor((todayDate - dueDate) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        status = 'green';
+      } else if (diffDays <= 7) {
+        status = 'yellow';
+        daysOverdue = diffDays;
+      } else {
+        status = 'red';
+        daysOverdue = diffDays;
+      }
+    }
+
+    return {
+      choreName: name,
+      status,
+      daysOverdue,
+      currentlyDue: incomplete ? {
+        assignedTo: incomplete.assignedTo,
+        dueDate: incomplete.dueDate
+      } : null,
+      lastCompleted: completed ? {
+        completedBy: completed.completedBy,
+        completedAt: completed.completedAt
+      } : null
+    };
+  });
+
+  statuses.sort((a, b) => {
+    const order = { red: 0, yellow: 1, green: 2 };
+    return order[a.status] - order[b.status];
+  });
+
+  res.json(statuses);
 });
 
 // ============ Home ============
