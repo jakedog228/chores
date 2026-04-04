@@ -38,11 +38,11 @@ function getSantaImage(percent) {
 }
 
 function getSantaMood(percent) {
-  if (percent < 20) return 'Coal for everyone!';
-  if (percent < 40) return 'Naughty list...';
-  if (percent < 60) return 'Surprised!';
-  if (percent < 80) return 'Not bad!';
-  return 'Merry!';
+  if (percent < 20) return "Deck my balls.";
+  if (percent < 40) return "It's a lost Clause.";
+  if (percent < 60) return 'Just in the Nick of time!';
+  if (percent < 80) return 'No gift like the present!';
+  return "YOU'RE GONNA RIDE MY SLEIGH TONIGHT";
 }
 
 export function SantaPersistent() {
@@ -110,7 +110,7 @@ export function SantaPersistent() {
     const id = hohoIdRef.current++;
     const offsetX = Math.random() * 40 - 10;
     const offsetY = Math.random() * 10;
-    const texts = ['Ho Ho Ho!', 'HOHOHO!', 'Yum...', "I'm literally Santa!", 'mmm beards...'];
+    const texts = ['Ho Ho Ho!', 'HOHOHO!', 'Yum...', "I'm literally Santa!", 'mmm beards...', mood];
     const text = texts[Math.floor(Math.random() * texts.length)];
     setHohos(prev => [...prev, { id, offsetX, offsetY, text }]);
     setTimeout(() => {
