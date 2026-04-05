@@ -369,14 +369,14 @@ export async function getLastCompletedPerChore() {
 export async function getEarliestIncompletePerChore() {
   const db = getDb();
   const result = await db.execute(
-    `SELECT chore_name, MIN(due_date) as earliest_due, assigned_to
+    `SELECT id, chore_name, MIN(due_date) as earliest_due, assigned_to
      FROM chores
      WHERE completed_at IS NULL
      GROUP BY chore_name`
   );
   const map = {};
   for (const row of result.rows) {
-    map[row.chore_name] = { dueDate: row.earliest_due, assignedTo: row.assigned_to };
+    map[row.chore_name] = { id: row.id, dueDate: row.earliest_due, assignedTo: row.assigned_to };
   }
   return map;
 }

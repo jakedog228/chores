@@ -15,7 +15,7 @@ function getCreatureForChore(choreName) {
   return CREATURE_MAP[choreName] || DEFAULT_CREATURE;
 }
 
-export function CalendarPage({ onRefreshNeeded }) {
+export function CalendarPage({ onRefreshNeeded, pendingChoreOpen, onPendingChoreHandled }) {
   const { selectedUser, people } = useUser();
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
@@ -46,6 +46,21 @@ export function CalendarPage({ onRefreshNeeded }) {
   useEffect(() => {
     fetchChores();
   }, [fetchChores]);
+
+  // Handle pending chore open from status panel
+  useEffect(() => {
+    if (!pendingChoreOpen || !chores.length) return;
+    // Navigate to the correct month if needed
+    if (pendingChoreOpen.year !== currentDate.year || pendingChoreOpen.month !== currentDate.month) {
+      setCurrentDate({ year: pendingChoreOpen.year, month: pendingChoreOpen.month });
+      return; // Will re-fetch and re-trigger this effect
+    }
+    const match = chores.find(c => c.choreName === pendingChoreOpen.choreName && c.dueDate === pendingChoreOpen.dueDate);
+    if (match) {
+      setSelectedChore(match);
+    }
+    onPendingChoreHandled?.();
+  }, [pendingChoreOpen, chores, currentDate, onPendingChoreHandled]);
 
   const prevMonth = () => {
     setCurrentDate(prev => {
@@ -351,7 +366,7 @@ export function CalendarPage({ onRefreshNeeded }) {
                             onTouchEnd={handleCreatureUp}
                             title={`Send ${creature.label}`}
                         >
-                            {creature.emoji}{count > 0 && `×${count}`}
+                            {creature.emoji}{count > 1 && `×${count}`}
                         </button>
                     );
                 })()}

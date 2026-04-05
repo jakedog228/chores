@@ -60,6 +60,11 @@ function UserSelectionModal({ onDismiss }) {
   );
 }
 
+const STATUS_CREATURE_EMOJI = { 'Do Dishes': '🍽️', 'Clean kitchen/table': '🍳' };
+function getStatusCreatureEmoji(choreName) {
+  return STATUS_CREATURE_EMOJI[choreName] || '🐻';
+}
+
 function StatusPanelIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -106,6 +111,7 @@ function MainApp() {
   const [homeData, setHomeData] = useState({ due: [], upcoming: [] });
   const [choreStatuses, setChoreStatuses] = useState([]);
   const [statusPanelOpen, setStatusPanelOpen] = useState(false);
+  const [pendingChoreOpen, setPendingChoreOpen] = useState(null);
   const [showUserSelection, setShowUserSelection] = useState(() => {
     const savedUser = localStorage.getItem('chores_selected_user');
     return !savedUser;
@@ -192,10 +198,28 @@ function MainApp() {
                 <div
                   key={chore.choreName}
                   className={`chore-status-card status-${chore.status}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    setStatusPanelOpen(false);
+                    if (chore.currentlyDue) {
+                      const dueDate = chore.currentlyDue.dueDate;
+                      const [year, month] = dueDate.split('-').map(Number);
+                      setPendingChoreOpen({ choreName: chore.choreName, dueDate, year, month });
+                    }
+                    setActiveTab('calendar');
+                  }}
                 >
                   <div className="chore-status-indicator" />
                   <div className="chore-status-content">
-                    <span className="chore-status-name">{chore.choreName}</span>
+                    <span className="chore-status-name">
+                      {chore.choreName}
+                      {chore.creatureCount > 0 && (
+                        <span style={{ marginLeft: '6px' }}>
+                          {getStatusCreatureEmoji(chore.choreName)}
+                          {chore.creatureCount > 1 && `×${chore.creatureCount}`}
+                        </span>
+                      )}
+                    </span>
                     <span className="chore-status-detail">
                       {formatStatusDetail(chore)}
                     </span>
@@ -208,7 +232,7 @@ function MainApp() {
       )}
 
       {activeTab === 'home' && <HomePage onRefreshNeeded={updateBadgeCount} />}
-      {activeTab === 'calendar' && <CalendarPage onRefreshNeeded={updateBadgeCount} />}
+      {activeTab === 'calendar' && <CalendarPage onRefreshNeeded={updateBadgeCount} pendingChoreOpen={pendingChoreOpen} onPendingChoreHandled={() => setPendingChoreOpen(null)} />}
       {activeTab === 'trash' && <TrashPage />}
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />

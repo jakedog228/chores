@@ -11,6 +11,7 @@ import {
   addCreature,
   removeCreatures,
   ackCreatureScare,
+  getCreaturesForChores,
   getEarliestIncompletePerChore,
   getLastCompletedPerChore,
   getTrashState,
@@ -290,6 +291,12 @@ apiRouter.get('/chore-status', async (req, res) => {
     ...Object.keys(lastCompleted)
   ])];
 
+  // Get creature counts for earliest incomplete chores
+  const incompleteIds = choreNames
+    .map(n => earliestIncomplete[n]?.id)
+    .filter(Boolean);
+  const creaturesMap = await getCreaturesForChores(incompleteIds);
+
   const statuses = choreNames.map(name => {
     const incomplete = earliestIncomplete[name];
     const completed = lastCompleted[name];
@@ -314,10 +321,13 @@ apiRouter.get('/chore-status', async (req, res) => {
       }
     }
 
+    const creatures = incomplete ? (creaturesMap[incomplete.id] || []) : [];
+
     return {
       choreName: name,
       status,
       daysOverdue,
+      creatureCount: creatures.length,
       currentlyDue: incomplete ? {
         assignedTo: incomplete.assignedTo,
         dueDate: incomplete.dueDate
