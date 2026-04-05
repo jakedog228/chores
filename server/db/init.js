@@ -33,6 +33,14 @@ CREATE TABLE IF NOT EXISTS chores (
   bear_scare_shown INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS creature_log (
+  id TEXT PRIMARY KEY,
+  chore_id TEXT NOT NULL,
+  creature_type TEXT NOT NULL,
+  scare_shown INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS trash_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   current_position INTEGER NOT NULL DEFAULT 1,
@@ -172,6 +180,40 @@ async function initializeDatabase() {
     console.log('Added vapid_private_key column to auth_config table.');
   } catch (e) {
     // Column already exists
+  }
+
+  // Create creature_log table for existing databases
+  try {
+    await db.execute(`CREATE TABLE IF NOT EXISTS creature_log (
+      id TEXT PRIMARY KEY,
+      chore_id TEXT NOT NULL,
+      creature_type TEXT NOT NULL,
+      scare_shown INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    )`);
+  } catch (e) {
+    // Table already exists
+  }
+
+  // Migrate old bear_marked data to creature_log
+  try {
+    const bearChores = await db.execute(
+      "SELECT id, bear_marked, bear_scare_shown FROM chores WHERE bear_marked = 1"
+    );
+    for (const row of bearChores.rows) {
+      const existing = await db.execute({
+        sql: "SELECT id FROM creature_log WHERE chore_id = ? AND creature_type = 'bear'",
+        args: [row.id]
+      });
+      if (existing.rows.length === 0) {
+        await db.execute({
+          sql: "INSERT INTO creature_log (id, chore_id, creature_type, scare_shown, created_at) VALUES (?, ?, 'bear', ?, ?)",
+          args: [crypto.randomUUID(), row.id, row.bear_scare_shown, new Date().toISOString()]
+        });
+      }
+    }
+  } catch (e) {
+    // Migration already done or no data
   }
 
   // Load config

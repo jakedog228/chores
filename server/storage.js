@@ -34,12 +34,14 @@ export async function getPeople() {
 export async function getChoresByMonth(yearMonth) {
   const db = getDb();
   const result = await db.execute({
-    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by, exception, bear_marked
+    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by, exception
           FROM chores
           WHERE due_date LIKE ?
           ORDER BY due_date ASC, chore_name ASC`,
     args: [yearMonth + '%']
   });
+  const choreIds = result.rows.map(r => r.id);
+  const creaturesMap = await getCreaturesForChores(choreIds);
   return result.rows.map(row => ({
     id: row.id,
     choreName: row.chore_name,
@@ -48,19 +50,21 @@ export async function getChoresByMonth(yearMonth) {
     completedAt: row.completed_at,
     completedBy: row.completed_by,
     exception: row.exception === 1,
-    bearMarked: row.bear_marked === 1
+    creatures: creaturesMap[row.id] || []
   }));
 }
 
 export async function getChoresDueForUser(user, today) {
   const db = getDb();
   const result = await db.execute({
-    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by, bear_marked, bear_scare_shown
+    sql: `SELECT id, chore_name, assigned_to, due_date, completed_at, completed_by
           FROM chores
           WHERE assigned_to = ? AND completed_at IS NULL AND due_date <= ?
           ORDER BY due_date ASC`,
     args: [user, today]
   });
+  const choreIds = result.rows.map(r => r.id);
+  const creaturesMap = await getCreaturesForChores(choreIds);
   return result.rows.map(row => ({
     id: row.id,
     choreName: row.chore_name,
@@ -68,8 +72,7 @@ export async function getChoresDueForUser(user, today) {
     dueDate: row.due_date,
     completedAt: row.completed_at,
     completedBy: row.completed_by,
-    bearMarked: row.bear_marked === 1,
-    bearScareShown: row.bear_scare_shown === 1
+    creatures: creaturesMap[row.id] || []
   }));
 }
 
@@ -152,28 +155,76 @@ export async function forceUncompleteChore(id) {
   });
 }
 
-export async function bearMarkChore(id) {
+// ============ Creatures ============
+
+let creatureTableEnsured = false;
+async function ensureCreatureTable() {
+  if (creatureTableEnsured) return;
+  const db = getDb();
+  await db.execute(`CREATE TABLE IF NOT EXISTS creature_log (
+    id TEXT PRIMARY KEY,
+    chore_id TEXT NOT NULL,
+    creature_type TEXT NOT NULL,
+    scare_shown INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  )`);
+  creatureTableEnsured = true;
+}
+
+export async function addCreature(choreId, creatureType) {
+  await ensureCreatureTable();
+  const db = getDb();
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  await db.execute({
+    sql: 'INSERT INTO creature_log (id, chore_id, creature_type, scare_shown, created_at) VALUES (?, ?, ?, 0, ?)',
+    args: [id, choreId, creatureType, createdAt]
+  });
+  return { id, choreId, creatureType, createdAt };
+}
+
+export async function removeCreatures(choreId) {
+  await ensureCreatureTable();
   const db = getDb();
   await db.execute({
-    sql: 'UPDATE chores SET bear_marked = 1 WHERE id = ?',
-    args: [id]
+    sql: 'DELETE FROM creature_log WHERE chore_id = ?',
+    args: [choreId]
   });
 }
 
-export async function unBearMarkChore(id) {
+export async function ackCreatureScare(choreId) {
+  await ensureCreatureTable();
   const db = getDb();
   await db.execute({
-    sql: 'UPDATE chores SET bear_marked = 0, bear_scare_shown = 0 WHERE id = ?',
-    args: [id]
+    sql: 'UPDATE creature_log SET scare_shown = 1 WHERE chore_id = ? AND scare_shown = 0',
+    args: [choreId]
   });
 }
 
-export async function ackBearScare(id) {
+export async function getCreaturesForChores(choreIds) {
+  if (!choreIds.length) return {};
+  await ensureCreatureTable();
   const db = getDb();
-  await db.execute({
-    sql: 'UPDATE chores SET bear_scare_shown = 1 WHERE id = ?',
-    args: [id]
-  });
+  const map = {};
+  // Batch in chunks to avoid query size limits
+  const chunkSize = 50;
+  for (let i = 0; i < choreIds.length; i += chunkSize) {
+    const chunk = choreIds.slice(i, i + chunkSize);
+    const placeholders = chunk.map(() => '?').join(',');
+    const result = await db.execute({
+      sql: `SELECT id, chore_id, creature_type, scare_shown FROM creature_log WHERE chore_id IN (${placeholders})`,
+      args: chunk
+    });
+    for (const row of result.rows) {
+      if (!map[row.chore_id]) map[row.chore_id] = [];
+      map[row.chore_id].push({
+        id: row.id,
+        creatureType: row.creature_type,
+        scareShown: row.scare_shown === 1
+      });
+    }
+  }
+  return map;
 }
 
 // ============ Trash ============

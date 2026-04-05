@@ -3,6 +3,11 @@ import { useUser } from '../hooks/useUser';
 import { homeApi, choresApi, trashApi } from '../services/api';
 import { CheckIcon, AlertIcon } from '../components/icons/Icons';
 
+const CREATURE_EMOJI = { 'Do Dishes': '🍽️', 'Clean kitchen/table': '🍳' };
+function getCreatureEmoji(choreName) {
+  return CREATURE_EMOJI[choreName] || '🐻';
+}
+
 export function HomePage({ onRefreshNeeded }) {
   const { selectedUser } = useUser();
   const [data, setData] = useState({ due: [], upcoming: [] });
@@ -112,7 +117,12 @@ export function HomePage({ onRefreshNeeded }) {
                     <div className="home-item-content">
                       <span className="home-item-name">
                         {item.choreName}
-                        {item.bearMarked && <span style={{ marginLeft: '6px' }}>🐻</span>}
+                        {item.creatures && item.creatures.length > 0 && (
+                          <span style={{ marginLeft: '6px' }}>
+                            {getCreatureEmoji(item.choreName)}
+                            {item.creatures.length > 1 && `×${item.creatures.length}`}
+                          </span>
+                        )}
                       </span>
                       <span className="home-item-meta">Due {formatDueDate(item.dueDate)}</span>
                     </div>

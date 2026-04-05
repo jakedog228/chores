@@ -5,6 +5,16 @@ import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icon
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const CREATURE_MAP = {
+  'Do Dishes': { type: 'plate', emoji: '🍽️', label: 'PLATE' },
+  'Clean kitchen/table': { type: 'stove', emoji: '🍳', label: 'STOVE' }
+};
+const DEFAULT_CREATURE = { type: 'bear', emoji: '🐻', label: 'BEAR' };
+
+function getCreatureForChore(choreName) {
+  return CREATURE_MAP[choreName] || DEFAULT_CREATURE;
+}
+
 export function CalendarPage({ onRefreshNeeded }) {
   const { selectedUser, people } = useUser();
   const [currentDate, setCurrentDate] = useState(() => {
@@ -15,10 +25,9 @@ export function CalendarPage({ onRefreshNeeded }) {
   const [loading, setLoading] = useState(true);
   const [selectedChore, setSelectedChore] = useState(null);
   const [showMerrimentInfo, setShowMerrimentInfo] = useState(false);
-  const [showBearConfirm, setShowBearConfirm] = useState(false);
-  const [showUnbearConfirm, setShowUnbearConfirm] = useState(false);
+  const [showUncreatureConfirm, setShowUncreatureConfirm] = useState(false);
   const [expandedTerm, setExpandedTerm] = useState(null);
-  const [bearPressTimer, setBearPressTimer] = useState(null);
+  const [creaturePressTimer, setCreaturePressTimer] = useState(null);
 
   const monthStr = `${currentDate.year}-${String(currentDate.month).padStart(2, '0')}`;
 
@@ -96,49 +105,46 @@ export function CalendarPage({ onRefreshNeeded }) {
     }
   };
 
-  const handleUnbear = async () => {
+  const handleUncreature = async () => {
     if (!selectedChore) return;
     try {
-      await choresApi.unBearMark(selectedChore.id);
+      await choresApi.removeCreatures(selectedChore.id);
       fetchChores();
       onRefreshNeeded?.();
-      setShowUnbearConfirm(false);
+      setShowUncreatureConfirm(false);
       setSelectedChore(null);
     } catch (err) {
-      console.error('Failed to un-bear:', err);
+      console.error('Failed to remove creatures:', err);
     }
   };
 
-  const handleBearDown = () => {
+  const handleCreatureDown = () => {
     const timer = setTimeout(() => {
-        setShowUnbearConfirm(true);
+        setShowUncreatureConfirm(true);
     }, 3000);
-    setBearPressTimer(timer);
+    setCreaturePressTimer(timer);
   };
 
-  const handleBearUp = () => {
-    if (bearPressTimer) {
-        clearTimeout(bearPressTimer);
-        setBearPressTimer(null);
+  const handleCreatureUp = () => {
+    if (creaturePressTimer) {
+        clearTimeout(creaturePressTimer);
+        setCreaturePressTimer(null);
     }
   };
 
-  const handleBearRelease = async () => {
+  const handleCreatureRelease = async () => {
     if (!selectedChore) return;
+    const creature = getCreatureForChore(selectedChore.choreName);
     try {
-      await choresApi.bearMark(selectedChore.id);
-      fetchChores();
+      await choresApi.addCreature(selectedChore.id, creature.type);
+      const updatedChores = await choresApi.getByMonth(monthStr);
+      setChores(updatedChores);
+      // Keep modal open with updated data
+      const updated = updatedChores.find(c => c.id === selectedChore.id);
+      if (updated) setSelectedChore(updated);
       onRefreshNeeded?.();
-      setShowBearConfirm(false);
-      // Keep modal open to show updated state? Or close?
-      // Prompt says "When this button is pressed... bear-marked until that chore is completed".
-      // Doesn't say to close modal. But we usually refresh data.
-      // Let's close the bear confirm, and keep the main modal open, but we need to update selectedChore.
-      // Easier to just close both or re-fetch and update selectedChore.
-      // For now, I'll close the confirm, re-fetch, and close the main modal to be safe/simple.
-      setSelectedChore(null);
     } catch (err) {
-      console.error('Failed to release bear:', err);
+      console.error('Failed to release creature:', err);
     }
   };
 
@@ -280,7 +286,12 @@ export function CalendarPage({ onRefreshNeeded }) {
                           >
                             <span className="chore-pill-text">
                               {shortenChore(chore.choreName)}
-                              {chore.bearMarked && <span style={{ marginLeft: '4px' }}>🐻</span>}
+                              {chore.creatures && chore.creatures.length > 0 && (
+                                <span style={{ marginLeft: '4px' }}>
+                                  {getCreatureForChore(chore.choreName).emoji}
+                                  {chore.creatures.length > 1 && `×${chore.creatures.length}`}
+                                </span>
+                              )}
                             </span>
                           </button>
                         );
@@ -324,24 +335,26 @@ export function CalendarPage({ onRefreshNeeded }) {
           <div className="modal chore-modal" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2>{selectedChore.choreName}</h2>
-                {/* Bear Button: Only for overdue, incomplete, unskipped chores */}
-                {(!selectedChore.completedAt && !selectedChore.skipped && selectedChore.dueDate <= todayStr) && (
-                    <button
-                        className="btn-secondary"
-                        style={{ fontSize: '1.2rem', padding: '4px 8px' }}
-                        onClick={() => {
-                           if (!showUnbearConfirm) setShowBearConfirm(true);
-                        }}
-                        onMouseDown={handleBearDown}
-                        onMouseUp={handleBearUp}
-                        onMouseLeave={handleBearUp}
-                        onTouchStart={handleBearDown}
-                        onTouchEnd={handleBearUp}
-                        title="RELEASE THE BEAR?!"
-                    >
-                        🐻
-                    </button>
-                )}
+                {/* Creature Button: Only for overdue, incomplete, unskipped chores */}
+                {(!selectedChore.completedAt && !selectedChore.skipped && selectedChore.dueDate <= todayStr) && (() => {
+                    const creature = getCreatureForChore(selectedChore.choreName);
+                    const count = selectedChore.creatures?.length || 0;
+                    return (
+                        <button
+                            className="btn-secondary"
+                            style={{ fontSize: '1.2rem', padding: '4px 8px' }}
+                            onClick={handleCreatureRelease}
+                            onMouseDown={handleCreatureDown}
+                            onMouseUp={handleCreatureUp}
+                            onMouseLeave={handleCreatureUp}
+                            onTouchStart={handleCreatureDown}
+                            onTouchEnd={handleCreatureUp}
+                            title={`Send ${creature.label}`}
+                        >
+                            {creature.emoji}{count > 0 && `×${count}`}
+                        </button>
+                    );
+                })()}
             </div>
             <div className="chore-detail-info">
               <p>
@@ -404,52 +417,31 @@ export function CalendarPage({ onRefreshNeeded }) {
         </div>
       )}
 
-      {/* Bear Confirmation Modal */}
-      {showBearConfirm && (
-        <div className="modal-overlay" style={{ zIndex: 300 }} onClick={() => setShowBearConfirm(false)}>
-            <div className="modal" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-                <h2>RELEASE THE BEAR?!</h2>
-                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
-                    <button
-                        className="btn-primary"
-                        style={{ background: 'var(--color-critical)', borderColor: 'var(--color-critical)' }}
-                        onClick={handleBearRelease}
-                    >
-                        YES!!!
-                    </button>
-                    <button
-                        className="btn-secondary"
-                        onClick={() => setShowBearConfirm(false)}
-                    >
-                        no :(
-                    </button>
-                </div>
-            </div>
-        </div>
-      )}
-
-      {/* Un-Bear Confirmation Modal */}
-      {showUnbearConfirm && (
-        <div className="modal-overlay" style={{ zIndex: 301 }} onClick={() => setShowUnbearConfirm(false)}>
-            <div className="modal" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-                <h2>UN-BEAR?!</h2>
-                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
-                    <button
-                        className="btn-primary"
-                        onClick={handleUnbear}
-                    >
-                        YES
-                    </button>
-                    <button
-                        className="btn-secondary"
-                        onClick={() => setShowUnbearConfirm(false)}
-                    >
-                        NO
-                    </button>
-                </div>
-            </div>
-        </div>
-      )}
+      {/* Un-Creature Confirmation Modal */}
+      {showUncreatureConfirm && selectedChore && (() => {
+        const creature = getCreatureForChore(selectedChore.choreName);
+        return (
+          <div className="modal-overlay" style={{ zIndex: 301 }} onClick={() => setShowUncreatureConfirm(false)}>
+              <div className="modal" style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                  <h2>UN-{creature.label}?!</h2>
+                  <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '24px' }}>
+                      <button
+                          className="btn-primary"
+                          onClick={handleUncreature}
+                      >
+                          YES
+                      </button>
+                      <button
+                          className="btn-secondary"
+                          onClick={() => setShowUncreatureConfirm(false)}
+                      >
+                          NO
+                      </button>
+                  </div>
+              </div>
+          </div>
+        );
+      })()}
 
       {/* Merriment info modal */}
       {showMerrimentInfo && merrimentData && (

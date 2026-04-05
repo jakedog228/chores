@@ -58,9 +58,12 @@ export const choresApi = {
     method: 'PATCH',
     body: JSON.stringify({ force })
   }),
-  bearMark: (id) => request(`/chores/${id}/bear`, { method: 'POST' }),
-  unBearMark: (id) => request(`/chores/${id}/unbear`, { method: 'POST' }),
-  bearSeen: (id) => request(`/chores/${id}/bear-seen`, { method: 'POST' })
+  addCreature: (id, type) => request(`/chores/${id}/creature`, {
+    method: 'POST',
+    body: JSON.stringify({ type })
+  }),
+  removeCreatures: (id) => request(`/chores/${id}/uncreature`, { method: 'POST' }),
+  creaturesSeen: (id) => request(`/chores/${id}/creature-seen`, { method: 'POST' })
 };
 
 export const trashApi = {

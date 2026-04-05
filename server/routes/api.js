@@ -8,9 +8,9 @@ import {
   uncompleteChore,
   forceCompleteChore,
   forceUncompleteChore,
-  bearMarkChore,
-  unBearMarkChore,
-  ackBearScare,
+  addCreature,
+  removeCreatures,
+  ackCreatureScare,
   getEarliestIncompletePerChore,
   getLastCompletedPerChore,
   getTrashState,
@@ -105,15 +105,20 @@ apiRouter.patch('/chores/:id/uncomplete', async (req, res) => {
   res.json({ success: true });
 });
 
-apiRouter.post('/chores/:id/bear', async (req, res) => {
+apiRouter.post('/chores/:id/creature', async (req, res) => {
   const { id } = req.params;
-  await bearMarkChore(id);
+  const { type } = req.body;
+  if (!['bear', 'plate', 'stove'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid creature type' });
+  }
+  await addCreature(id, type);
 
   // Send push notification to chore owner (fire-and-forget)
+  const emojis = { bear: '\u{1F43B}', plate: '\u{1F37D}', stove: '\u{1FAA8}' };
   const chore = await getChoreById(id);
   if (chore) {
     sendNotificationToUser(chore.assignedTo, {
-      title: '\u{1F43B}',
+      title: emojis[type] || '\u{1F43B}',
       body: `${chore.choreName}..!`
     }).catch(() => {});
   }
@@ -121,15 +126,15 @@ apiRouter.post('/chores/:id/bear', async (req, res) => {
   res.json({ success: true });
 });
 
-apiRouter.post('/chores/:id/unbear', async (req, res) => {
+apiRouter.post('/chores/:id/uncreature', async (req, res) => {
   const { id } = req.params;
-  await unBearMarkChore(id);
+  await removeCreatures(id);
   res.json({ success: true });
 });
 
-apiRouter.post('/chores/:id/bear-seen', async (req, res) => {
+apiRouter.post('/chores/:id/creature-seen', async (req, res) => {
   const { id } = req.params;
-  await ackBearScare(id);
+  await ackCreatureScare(id);
   res.json({ success: true });
 });
 
